@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Login</title>
+<script src="https://accounts.google.com/gsi/client" async defer onload="typeof onGoogleLibraryLoad==='function'&&onGoogleLibraryLoad()"></script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    background: #1a1040;
+  }
+
+  /* ── Sky gradient ── */
+  .sky {
+    position: fixed; inset: 0; z-index: 0;
+    background: linear-gradient(180deg,
+      #b8c8e8 0%,
+      #9aafd4 15%,
+      #8898c8 28%,
+      #7070b8 42%,
+      #5a5aaa 55%,
+      #4040a0 68%,
+      #2d2d7a 80%,
+      #1a1040 100%
+    );
+  }
+
+  /* ── Birds (CSS) ── */
+  .birds { position: fixed; top: 6%; left: 0; width: 100%; z-index: 1; pointer-events: none; }
+  .bird {
+    position: absolute;
+    width: 22px; height: 7px;
+    border-top: 2px solid #6a7aaa;
+    border-radius: 50% 50% 0 0;
+    animation: flyBird 12s linear infinite;
+    opacity: 0.6;
+  }
+  .bird::after {
+    content: '';
+    position: absolute;
+    right: -11px; top: 0;
+    width: 11px; height: 7px;
+    border-top: 2px solid #6a7aaa;
+    border-radius: 50% 50% 0 0;
+  }
+  .bird:nth-child(1) { top: 0; left: -40px; animation-delay: 0s; }
+  .bird:nth-child(2) { top: 18px; left: -80px; animation-delay: 1.5s; transform: scale(0.75); }
+  .bird:nth-child(3) { top: 8px; left: -120px; animation-delay: 3s; transform: scale(0.6); }
+  @keyframes flyBird {
+    from { transform: translateX(0); }
+    to { transform: translateX(calc(100vw + 200px)); }
+  }
+
+  /* ── Mountain layers ── */
+  .mountains { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+  .mountains svg { width: 100%; height: 100%; }
+
+  /* ── Foreground trees ── */
+  .trees { position: fixed; bottom: 0; left: 0; width: 100%; z-index: 3; pointer-events: none; }
+  .trees svg { width: 100%; height: 160px; display: block; }
+
+  /* ── Language toggle ── */
+  .lang-toggle {
+    position: fixed;
+    top: 18px; right: 22px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: rgba(255,255,255,0.13);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 24px;
+    padding: 3px;
+    backdrop-filter: blur(8px);
+  }
+  .lang-btn {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: none;
+    background: transparent;
+    color: rgba(255,255,255,0.7);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .lang-btn.active {
+    background: rgba(255,255,255,0.9);
+    color: #3a3090;
+  }
+
+  /* ── Card ── */
+  .card {
+    position: relative; z-index: 10;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 18px;
+    padding: 2.2rem 2rem 2rem;
+    width: 340px;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 8px 40px rgba(20,10,80,0.45);
+  }
+
+  .card-title {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 1.6rem;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Fields ── */
+  .field { position: relative; margin-bottom: 1rem; }
+
+  .field input {
+    width: 100%;
+    height: 44px;
+    background: rgba(255,255,255,0.13);
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    padding: 0 38px 0 14px;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .field input::placeholder { color: rgba(255,255,255,0.55); font-size: 13px; }
+  .field input:focus {
+    border-color: rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.18);
+  }
+
+  .field-icon {
+    position: absolute;
+    right: 12px; top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255,255,255,0.55);
+    font-size: 15px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  /* ── Options row ── */
+  .options-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0.3rem 0 1.2rem;
+  }
+
+  .remember {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: rgba(255,255,255,0.7);
+    cursor: pointer; user-select: none;
+  }
+  .remember input[type=checkbox] {
+    width: 13px; height: 13px;
+    accent-color: #8877ff;
+    cursor: pointer;
+  }
+
+  .forgot {
+    font-size: 12px;
+    color: rgba(255,255,255,0.75);
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .forgot:hover { color: #fff; text-decoration: underline; }
+
+  /* ── Login button ── */
+  .btn-login {
+    width: 100%;
+    height: 44px;
+    background: #fff;
+    color: #3a3090;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  }
+  .btn-login:hover { background: #ede8ff; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+  .btn-login:active { transform: scale(0.98); }
+  .btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .register-link {
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.6);
+  }
+  .register-link span {
+    color: rgba(255,255,255,0.9);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  /* ── Register view ── */
+  #registerView { display: none; }
+
+  /* ── Status badge ── */
+  .status {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    margin-bottom: 0.9rem;
+    font-weight: 500;
+  }
+  .status.error { display: flex; background: rgba(255,80,80,0.18); color: #ffaaaa; border: 1px solid rgba(255,100,100,0.3); }
+  .status.success { display: flex; background: rgba(80,220,150,0.18); color: #90ffcc; border: 1px solid rgba(80,220,150,0.3); }
+  .status.info { display: flex; background: rgba(140,140,255,0.18); color: #c0c0ff; border: 1px solid rgba(140,140,255,0.3); }
+
+  /* ── JSON preview panel ── */
+  .json-panel {
+    position: fixed;
+    bottom: 16px; right: 16px;
+    z-index: 20;
+    width: 280px;
+    background: rgba(10,5,40,0.88);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
+    backdrop-filter: blur(12px);
+    overflow: hidden;
+    display: none;
+  }
+  .json-panel.show { display: block; }
+  .json-panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    font-size: 11px; font-weight: 600;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+  .json-tabs { display: flex; gap: 6px; }
+  .json-tab {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.5);
+    background: transparent;
+    transition: all 0.15s;
+  }
+  .json-tab.active { background: rgba(140,120,255,0.35); color: #c0b8ff; border-color: rgba(140,120,255,0.4); }
+  .json-body {
+    padding: 10px 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    color: rgba(180,220,180,0.9);
+    max-height: 180px;
+    overflow-y: auto;
+    white-space: pre;
+    line-height: 1.55;
+  }
+  .json-close {
+    cursor: pointer; color: rgba(255,255,255,0.4); font-size: 14px;
+    background: none; border: none; padding: 0;
+  }
+  .json-close:hover { color: #fff; }
+
+  /* ── Live indicator ── */
+  .live-dot {
+    position: fixed;
+    bottom: 16px; left: 16px;
+    z-index: 20;
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(10,5,40,0.75);
+    border: 1px solid rgba(80,220,150,0.3);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 11px; color: #90ffcc;
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+  }
+  .dot {
+    width: 7px; height: 7px;
+    background: #50dc96;
+    border-radius: 50%;
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; top: 18px; left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    background: rgba(10,5,50,0.95);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    padding: 9px 18px;
+    font-size: 13px; color: #fff;
+    z-index: 200;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+    backdrop-filter: blur(10px);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── Google OAuth button ── */
+  .google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px;
+    margin-top: 12px;
+    background: #fff;
+    color: #3c4043;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: box-shadow 0.2s;
+  }
+  .google-btn:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+  .google-btn svg { width: 20px; height: 20px; }
+  .divider {
+    display: flex; align-items: center; gap: 8px;
+    margin: 14px 0 2px; color: #888; font-size: 13px;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.15);
+  }
+</style>
+</head>
+<body>
+
+<!-- Sky -->
+<div class="sky"></div>
+
+<!-- Birds -->
+<div class="birds">
+  <div class="bird"></div>
+  <div class="bird"></div>
+  <div class="bird"></div>
+</div>
+
+<!-- Mountain Layers -->
+<div class="mountains">
+  <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+    <!-- Far mountains (lightest) -->
+    <polygon points="0,580 180,340 320,480 500,300 680,440 820,280 1000,420 1180,310 1350,430 1440,360 1440,900 0,900" fill="#9090c8" opacity="0.5"/>
+    <!-- Mid mountains -->
+    <polygon points="0,640 150,440 300,560 480,390 650,510 800,380 960,500 1120,400 1280,520 1440,440 1440,900 0,900" fill="#6a6aaa" opacity="0.7"/>
+    <!-- Near mountains (darker) -->
+    <polygon points="0,700 100,520 250,640 420,460 580,600 720,460 880,580 1060,470 1220,600 1360,500 1440,560 1440,900 0,900" fill="#4a4a90" opacity="0.85"/>
+    <!-- Closest dark ridges -->
+    <polygon points="0,780 80,640 200,720 340,600 480,700 620,580 760,680 900,600 1040,700 1180,620 1320,720 1440,660 1440,900 0,900" fill="#2e2870"/>
+    <!-- Very front ridge -->
+    <polygon points="0,860 120,780 260,840 400,760 540,830 680,760 820,840 960,780 1100,850 1240,780 1380,850 1440,820 1440,900 0,900" fill="#1a1050"/>
+  </svg>
+</div>
+
+<!-- Foreground Trees -->
+<div class="trees">
+  <svg viewBox="0 0 1440 160" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+    <g fill="#0d0830">
+      <!-- Dense tree silhouette -->
+      <polygon points="0,160 0,100 15,60 30,100 30,160"/>
+      <polygon points="20,160 20,90 38,45 56,90 56,160"/>
+      <polygon points="45,160 45,105 60,65 75,105 75,160"/>
+      <polygon points="65,160 65,80 85,30 105,80 105,160"/>
+      <polygon points="95,160 95,95 112,55 129,95 129,160"/>
+      <polygon points="118,160 118,88 138,40 158,88 158,160"/>
+      <polygon points="148,160 148,100 165,62 182,100 182,160"/>
+      <polygon points="172,160 172,78 195,25 218,78 218,160"/>
+      <polygon points="205,160 205,92 222,52 239,92 239,160"/>
+      <polygon points="228,160 228,85 248,38 268,85 268,160"/>
+      <polygon points="258,160 258,98 275,58 292,98 292,160"/>
+      <polygon points="280,160 280,72 305,18 330,72 330,160"/>
+      <polygon points="318,160 318,90 336,50 354,90 354,160"/>
+      <polygon points="342,160 342,82 362,35 382,82 382,160"/>
+      <polygon points="370,160 370,96 387,56 404,96 404,160"/>
+      <polygon points="392,160 392,74 415,22 438,74 438,160"/>
+      <polygon points="425,160 425,88 444,46 463,88 463,160"/>
+      <polygon points="450,160 450,100 467,60 484,100 484,160"/>
+      <polygon points="474,160 474,78 498,28 522,78 522,160"/>
+      <polygon points="510,160 510,92 528,52 546,92 546,160"/>
+      <polygon points="534,160 534,84 554,38 574,84 574,160"/>
+      <polygon points="562,160 562,98 580,58 598,98 598,160"/>
+      <polygon points="586,160 586,70 612,16 638,70 638,160"/>
+      <polygon points="625,160 625,86 644,44 663,86 663,160"/>
+      <polygon points="650,160 650,94 668,54 686,94 686,160"/>
+      <polygon points="674,160 674,76 700,24 726,76 726,160"/>
+      <polygon points="712,160 712,90 730,50 748,90 748,160"/>
+      <polygon points="736,160 736,82 756,35 776,82 776,160"/>
+      <polygon points="764,160 764,96 782,56 800,96 800,160"/>
+      <polygon points="788,160 788,72 814,18 840,72 840,160"/>
+      <polygon points="828,160 828,88 847,46 866,88 866,160"/>
+      <polygon points="854,160 854,100 872,60 890,100 890,160"/>
+      <polygon points="878,160 878,78 902,26 926,78 926,160"/>
+      <polygon points="914,160 914,92 932,52 950,92 950,160"/>
+      <polygon points="938,160 938,84 958,38 978,84 978,160"/>
+      <polygon points="966,160 966,70 992,15 1018,70 1018,160"/>
+      <polygon points="1005,160 1005,86 1024,44 1043,86 1043,160"/>
+      <polygon points="1030,160 1030,94 1048,54 1066,94 1066,160"/>
+      <polygon points="1054,160 1054,76 1080,24 1106,76 1106,160"/>
+      <polygon points="1092,160 1092,90 1110,50 1128,90 1128,160"/>
+      <polygon points="1116,160 1116,82 1136,35 1156,82 1156,160"/>
+      <polygon points="1144,160 1144,70 1170,16 1196,70 1196,160"/>
+      <polygon points="1183,160 1183,88 1202,46 1221,88 1221,160"/>
+      <polygon points="1208,160 1208,96 1226,56 1244,96 1244,160"/>
+      <polygon points="1232,160 1232,74 1258,20 1284,74 1284,160"/>
+      <polygon points="1270,160 1270,90 1288,50 1306,90 1306,160"/>
+      <polygon points="1294,160 1294,82 1314,35 1334,82 1334,160"/>
+      <polygon points="1322,160 1322,68 1348,14 1374,68 1374,160"/>
+      <polygon points="1360,160 1360,86 1380,44 1400,86 1400,160"/>
+      <polygon points="1388,160 1388,98 1406,58 1424,98 1424,160"/>
+      <polygon points="1415,160 1415,78 1440,25 1440,160"/>
+      <rect x="0" y="145" width="1440" height="15"/>
+    </g>
+  </svg>
+</div>
+
+<!-- Language Toggle -->
+<div class="lang-toggle">
+  <button class="lang-btn active" id="btnEN" onclick="setLang('en')">EN</button>
+  <button class="lang-btn" id="btnHI" onclick="setLang('hi')">हिं</button>
+</div>
+
+<!-- Card -->
+<div class="card" id="mainCard">
+
+  <!-- LOGIN VIEW -->
+  <div id="loginView">
+    <div class="card-title" id="t_title">Login</div>
+    <div class="status" id="loginStatus"></div>
+
+    <div class="field">
+      <input type="email" id="loginEmail" placeholder="Email ID" autocomplete="email" />
+      <span class="field-icon">✉</span>
+    </div>
+
+    <div class="field">
+      <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password" id="loginPassInput" />
+      <span class="field-icon" id="eyeLogin" onclick="toggleEye('loginPass','eyeLogin')" style="cursor:pointer">🔒</span>
+    </div>
+
+    <div class="options-row">
+      <label class="remember">
+        <input type="checkbox" id="rememberMe" />
+        <span id="t_remember">Remember me</span>
+      </label>
+      <a class="forgot" id="t_forgot" onclick="showForgotModal()">Forgot Password?</a>
+    </div>
+
+    <button class="btn-login" id="loginBtn" onclick="handleLogin()">
+      <span id="t_loginBtn">Login</span>
+    </button>
+
+    <div class="divider">or continue with</div>
+    <button class="google-btn" onclick="handleGoogleSignIn()">
+      <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Sign in with Google
+    </button>
+
+    <div class="register-link">
+      <span id="t_noAccount">Don't have an account?</span>
+      <span onclick="switchToRegister()" id="t_registerLink"> Register</span>
+    </div>
+  </div>
+
+  <!-- REGISTER VIEW -->
+  <div id="registerView">
+    <div class="card-title" id="t_regTitle">Create Account</div>
+    <div class="status" id="regStatus"></div>
+
+    <div class="field">
+      <input type="text" id="regName" placeholder="Full Name" />
+      <span class="field-icon">👤</span>
+    </div>
+
+    <div class="field">
+      <input type="email" id="regEmail" placeholder="Email ID" />
+      <span class="field-icon">✉</span>
+    </div>
+
+    <div class="field">
+      <input type="password" id="regPass" placeholder="Password (min 6 chars)" />
+      <span class="field-icon" id="eyeReg" onclick="toggleEye('regPass','eyeReg')" style="cursor:pointer">🔒</span>
+    </div>
+
+    <div class="field">
+      <input type="password" id="regPassConfirm" placeholder="Confirm Password" />
+      <span class="field-icon">🔒</span>
+    </div>
+
+    <button class="btn-login" onclick="handleRegister()" style="margin-top:0.4rem">
+      <span id="t_regBtn">Register</span>
+    </button>
+
+    <div class="divider">or sign up with</div>
+    <button class="google-btn" onclick="handleGoogleSignIn()">
+      <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Sign up with Google
+    </button>
+
+    <div class="register-link">
+      <span id="t_haveAccount">Already have an account?</span>
+      <span onclick="switchToLogin()" id="t_loginLink"> Login</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Live dot -->
+<div class="live-dot" onclick="toggleJsonPanel()">
+  <div class="dot"></div>
+  <span id="t_liveLabel">Live JSON</span>
+</div>
+
+<!-- JSON Panel -->
+<div class="json-panel" id="jsonPanel">
+  <div class="json-panel-header">
+    <div class="json-tabs">
+      <button class="json-tab active" onclick="switchTab('data')" id="tabData">data.json</button>
+      <button class="json-tab" onclick="switchTab('pass')" id="tabPass">passwords.json</button>
+    </div>
+    <button class="json-close" onclick="toggleJsonPanel()">✕</button>
+  </div>
+  <div class="json-body" id="jsonBody">Loading...</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Forgot Modal (simple inline) -->
+<div id="forgotOverlay" style="display:none;position:fixed;inset:0;z-index:150;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+  <div style="background:rgba(20,12,60,0.97);border:1px solid rgba(255,255,255,0.2);border-radius:14px;padding:1.8rem;width:300px;backdrop-filter:blur(16px);">
+    <div style="font-size:16px;font-weight:600;color:#fff;margin-bottom:0.5rem" id="t_forgotTitle">Reset Password</div>
+    <div style="font-size:12.5px;color:rgba(255,255,255,0.6);margin-bottom:1rem" id="t_forgotSub">Enter your registered email</div>
+    <div class="field"><input type="email" id="forgotEmail" placeholder="Email ID" /><span class="field-icon">✉</span></div>
+    <div style="display:flex;gap:8px;margin-top:1rem">
+      <button onclick="closeForgot()" style="flex:1;height:38px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:8px;cursor:pointer;font-size:13px" id="t_cancel">Cancel</button>
+      <button onclick="handleForgot()" style="flex:1;height:38px;background:#fff;color:#3a3090;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px" id="t_send">Send Link</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   TRANSLATIONS
+═══════════════════════════════════════ */
+const LANG = {
+  en: {
+    t_title: 'Login', t_regTitle: 'Create Account',
+    t_remember: 'Remember me', t_forgot: 'Forgot Password?',
+    t_loginBtn: 'Login', t_regBtn: 'Register',
+    t_noAccount: "Don't have an account?", t_registerLink: ' Register',
+    t_haveAccount: 'Already have an account?', t_loginLink: ' Login',
+    t_liveLabel: 'Live JSON',
+    t_forgotTitle: 'Reset Password', t_forgotSub: 'Enter your registered email',
+    t_cancel: 'Cancel', t_send: 'Send Link',
+    loginEmail: 'Email ID', loginPass: 'Password',
+    regName: 'Full Name', regEmail: 'Email ID',
+    regPass: 'Password (min 6 chars)', regPassConfirm: 'Confirm Password',
+    forgotEmail: 'Email ID'
+  },
+  hi: {
+    t_title: 'लॉगिन', t_regTitle: 'खाता बनाएं',
+    t_remember: 'याद रखें', t_forgot: 'पासवर्ड भूल गए?',
+    t_loginBtn: 'लॉगिन करें', t_regBtn: 'रजिस्टर करें',
+    t_noAccount: 'खाता नहीं है?', t_registerLink: ' रजिस्टर करें',
+    t_haveAccount: 'पहले से खाता है?', t_loginLink: ' लॉगिन करें',
+    t_liveLabel: 'लाइव JSON',
+    t_forgotTitle: 'पासवर्ड रीसेट', t_forgotSub: 'अपना रजिस्टर्ड ईमेल दर्ज करें',
+    t_cancel: 'रद्द करें', t_send: 'लिंक भेजें',
+    loginEmail: 'ईमेल आईडी', loginPass: 'पासवर्ड',
+    regName: 'पूरा नाम', regEmail: 'ईमेल आईडी',
+    regPass: 'पासवर्ड (कम से कम 6 अक्षर)', regPassConfirm: 'पासवर्ड दोबारा दर्ज करें',
+    forgotEmail: 'ईमेल आईडी'
+  }
+};
+
+const MSG = {
+  en: {
+    fillAll: '⚠ Please fill all fields',
+    passShort: '⚠ Password must be at least 6 characters',
+    passMismatch: '⚠ Passwords do not match',
+    emailExists: '⚠ Email already registered',
+    registered: '✓ Account created! Please login.',
+    wrongCred: '✗ Incorrect email or password',
+    loginOk: (n) => `✓ Welcome back, ${n}!`,
+    forgotOk: '✓ Reset link sent (simulated)',
+    forgotFail: '✗ Email not found'
+  },
+  hi: {
+    fillAll: '⚠ सभी फ़ील्ड भरें',
+    passShort: '⚠ पासवर्ड कम से कम 6 अक्षर का होना चाहिए',
+    passMismatch: '⚠ पासवर्ड मेल नहीं खाते',
+    emailExists: '⚠ ईमेल पहले से रजिस्टर्ड है',
+    registered: '✓ खाता बन गया! अब लॉगिन करें।',
+    wrongCred: '✗ गलत ईमेल या पासवर्ड',
+    loginOk: (n) => `✓ स्वागत है, ${n}!`,
+    forgotOk: '✓ रीसेट लिंक भेज दिया गया',
+    forgotFail: '✗ ईमेल नहीं मिला'
+  }
+};
+
+/* ═══════════════════════════════════════
+   FORMSPREE CONFIG — swap these IDs from formspree.io
+═══════════════════════════════════════ */
+const FORMSPREE_REGISTER_URL = 'https://formspree.io/f/YOUR_REGISTER_FORM_ID';
+const FORMSPREE_LOGIN_URL    = 'https://formspree.io/f/YOUR_LOGIN_FORM_ID';
+
+async function sendToFormspree(url, payload) {
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (_) {
+    // silent — local storage write already succeeded
+  }
+}
+
+let currentLang = 'en';
+
+function setLang(lang) {
+  currentLang = lang;
+  document.getElementById('btnEN').classList.toggle('active', lang === 'en');
+  document.getElementById('btnHI').classList.toggle('active', lang === 'hi');
+  const t = LANG[lang];
+  Object.keys(t).forEach(key => {
+    const el = document.getElementById(key);
+    if (el) {
+      if (el.tagName === 'INPUT') el.placeholder = t[key];
+      else el.textContent = t[key];
+    }
+  });
+}
+
+/* ═══════════════════════════════════════
+   CRYPTO — SHA-256 hash (Web Crypto API)
+═══════════════════════════════════════ */
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+/* ═══════════════════════════════════════
+   DATA STORE (localStorage mirrors JSON files)
+═══════════════════════════════════════ */
+function loadData() {
+  return JSON.parse(localStorage.getItem('app_data') || '{"users":[]}');
+}
+function loadPasswords() {
+  return JSON.parse(localStorage.getItem('app_passwords') || '{"hashes":[]}');
+}
+function saveData(d) {
+  localStorage.setItem('app_data', JSON.stringify(d, null, 2));
+  refreshJsonPanel();
+}
+function savePasswords(p) {
+  localStorage.setItem('app_passwords', JSON.stringify(p, null, 2));
+  refreshJsonPanel();
+}
+
+/* ═══════════════════════════════════════
+   JSON PANEL
+═══════════════════════════════════════ */
+let activeTab = 'data';
+
+function toggleJsonPanel() {
+  const p = document.getElementById('jsonPanel');
+  p.classList.toggle('show');
+  if (p.classList.contains('show')) refreshJsonPanel();
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.getElementById('tabData').classList.toggle('active', tab === 'data');
+  document.getElementById('tabPass').classList.toggle('active', tab === 'pass');
+  refreshJsonPanel();
+}
+
+function refreshJsonPanel() {
+  const body = document.getElementById('jsonBody');
+  if (activeTab === 'data') {
+    body.textContent = JSON.stringify(loadData(), null, 2);
+  } else {
+    const p = loadPasswords();
+    const masked = {
+      hashes: p.hashes.map(h => ({
+        userId: h.userId,
+        hash: h.hash.substring(0, 8) + '••••••••••••••••••••••••••' + h.hash.slice(-4),
+        algorithm: 'SHA-256',
+        createdAt: h.createdAt
+      }))
+    };
+    body.textContent = JSON.stringify(masked, null, 2);
+  }
+}
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ═══════════════════════════════════════
+   STATUS
+═══════════════════════════════════════ */
+function setStatus(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'status ' + type;
+}
+function clearStatus(id) {
+  const el = document.getElementById(id);
+  el.className = 'status';
+  el.textContent = '';
+}
+
+/* ═══════════════════════════════════════
+   EYE TOGGLE
+═══════════════════════════════════════ */
+function toggleEye(inputId, iconId) {
+  const inp = document.getElementById(inputId);
+  const ico = document.getElementById(iconId);
+  if (inp.type === 'password') { inp.type = 'text'; ico.textContent = '👁'; }
+  else { inp.type = 'password'; ico.textContent = '🔒'; }
+}
+
+/* ═══════════════════════════════════════
+   VIEWS
+═══════════════════════════════════════ */
+function switchToRegister() {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('registerView').style.display = 'block';
+  clearStatus('regStatus');
+}
+function switchToLogin() {
+  document.getElementById('registerView').style.display = 'none';
+  document.getElementById('loginView').style.display = 'block';
+  clearStatus('loginStatus');
+}
+
+/* ═══════════════════════════════════════
+   REGISTER
+═══════════════════════════════════════ */
+async function handleRegister() {
+  const name  = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim().toLowerCase();
+  const pass  = document.getElementById('regPass').value;
+  const conf  = document.getElementById('regPassConfirm').value;
+  const m = MSG[currentLang];
+
+  if (!name || !email || !pass || !conf) { setStatus('regStatus', m.fillAll, 'error'); return; }
+  if (pass.length < 6)  { setStatus('regStatus', m.passShort, 'error'); return; }
+  if (pass !== conf)    { setStatus('regStatus', m.passMismatch, 'error'); return; }
+
+  const data = loadData();
+  if (data.users.find(u => u.email === email)) { setStatus('regStatus', m.emailExists, 'error'); return; }
+
+  const hash = await sha256(pass);
+  const userId = 'usr_' + Date.now();
+  const now = new Date().toISOString();
+
+  // Save to data.json store
+  data.users.push({ id: userId, name, email, createdAt: now, lastLogin: null });
+  saveData(data);
+
+  // Save to passwords.json store
+  const passwords = loadPasswords();
+  passwords.hashes.push({ userId, hash, algorithm: 'SHA-256', createdAt: now });
+  savePasswords(passwords);
+
+  // Send registration data to Formspree
+  sendToFormspree(FORMSPREE_REGISTER_URL, {
+    event:     'register',
+    userId,
+    name,
+    email,
+    createdAt: now,
+    _subject:  `New Registration: ${name}`
+  });
+
+  setStatus('regStatus', m.registered, 'success');
+  setTimeout(() => {
+    document.getElementById('regName').value = '';
+    document.getElementById('regEmail').value = '';
+    document.getElementById('regPass').value = '';
+    document.getElementById('regPassConfirm').value = '';
+    switchToLogin();
+  }, 1400);
+}
+
+/* ═══════════════════════════════════════
+   LOGIN
+═══════════════════════════════════════ */
+async function handleLogin() {
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pass  = document.getElementById('loginPass').value;
+  const m = MSG[currentLang];
+
+  if (!email || !pass) { setStatus('loginStatus', m.fillAll, 'error'); return; }
+
+  const data = loadData();
+  const user = data.users.find(u => u.email === email);
+
+  if (!user) { setStatus('loginStatus', m.wrongCred, 'error'); return; }
+
+  const hash = await sha256(pass);
+  const passwords = loadPasswords();
+  const record = passwords.hashes.find(h => h.userId === user.id);
+
+  if (!record || record.hash !== hash) { setStatus('loginStatus', m.wrongCred, 'error'); return; }
+
+  // Update lastLogin
+  user.lastLogin = new Date().toISOString();
+  saveData(data);
+
+  // Send login event to Formspree
+  sendToFormspree(FORMSPREE_LOGIN_URL, {
+    event:     'login',
+    userId:    user.id,
+    name:      user.name,
+    email:     user.email,
+    loginAt:   new Date().toISOString(),
+    _subject:  `Login: ${user.email}`
+  });
+
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  document.getElementById('t_loginBtn').textContent = currentLang === 'en' ? 'Verifying...' : 'जांच हो रही है...';
+
+  setTimeout(() => {
+    setStatus('loginStatus', m.loginOk(user.name), 'success');
+    btn.disabled = false;
+    document.getElementById('t_loginBtn').textContent = LANG[currentLang].t_loginBtn;
+    showToast(m.loginOk(user.name));
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginPass').value = '';
+
+    // Redirect to MYRA download page after 1.2s
+    setTimeout(() => {
+      window.location.href = 'myra-download-site.html'; // Place both files in same folder OR replace with your live URL e.g. 'https://your-domain.com/myra-download-site.html'
+    }, 1200);
+  }, 800);
+}
+
+/* ═══════════════════════════════════════
+   FORGOT PASSWORD
+═══════════════════════════════════════ */
+function showForgotModal() {
+  document.getElementById('forgotOverlay').style.display = 'flex';
+}
+function closeForgot() {
+  document.getElementById('forgotOverlay').style.display = 'none';
+  document.getElementById('forgotEmail').value = '';
+}
+function handleForgot() {
+  const email = document.getElementById('forgotEmail').value.trim().toLowerCase();
+  const m = MSG[currentLang];
+  const data = loadData();
+  const found = data.users.find(u => u.email === email);
+  closeForgot();
+  showToast(found ? m.forgotOk : m.forgotFail);
+}
+
+/* ═══════════════════════════════════════
+   ENTER KEY SUPPORT
+═══════════════════════════════════════ */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    if (document.getElementById('loginView').style.display !== 'none') handleLogin();
+    else handleRegister();
+  }
+});
+
+/* ═══════════════════════════════════════
+   REMEMBER ME — pre-fill on load
+═══════════════════════════════════════ */
+window.onload = () => {
+  const saved = localStorage.getItem('remembered_email');
+  if (saved) {
+    document.getElementById('loginEmail').value = saved;
+    document.getElementById('rememberMe').checked = true;
+  }
+  document.getElementById('rememberMe').addEventListener('change', function() {
+    if (this.checked) {
+      localStorage.setItem('remembered_email', document.getElementById('loginEmail').value);
+    } else {
+      localStorage.removeItem('remembered_email');
+    }
+  });
+  refreshJsonPanel();
+};
+
+/* ═══════════════════════════════════════
+   GOOGLE SIGN-IN
+   Replace YOUR_GOOGLE_CLIENT_ID with your
+   OAuth 2.0 Client ID from console.cloud.google.com
+═══════════════════════════════════════ */
+const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+
+let googleReady = false;
+
+// Called by Google GSI script once loaded
+window.onGoogleLibraryLoad = function() {
+  googleReady = true;
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: onGoogleCredential,
+    auto_select: false,
+    cancel_on_tap_outside: true,
+  });
+};
+
+function handleGoogleSignIn() {
+  if (!googleReady) {
+    showToast('Google is still loading — try again in a moment.');
+    return;
+  }
+  // Use popup flow — works without a verified domain during dev
+  const popup = window.open(
+    `https://accounts.google.com/o/oauth2/v2/auth?` +
+    `client_id=${encodeURIComponent(GOOGLE_CLIENT_ID)}` +
+    `&redirect_uri=${encodeURIComponent(window.location.href.split('?')[0])}` +
+    `&response_type=token id_token` +
+    `&scope=openid email profile` +
+    `&nonce=${Math.random().toString(36).slice(2)}`,
+    '_blank', 'width=500,height=620'
+  );
+
+  // Prefer One Tap — simpler UX when available
+  google.accounts.id.prompt((note) => {
+    if (!note.isDisplayed()) {
+      // One Tap blocked (third-party cookies etc) — fallback already opened above
+    } else {
+      // One Tap is showing — close the popup we opened
+      if (popup && !popup.closed) popup.close();
+    }
+  });
+}
+
+async function onGoogleCredential(response) {
+  try {
+    // Decode JWT payload (display only — not verified server-side here)
+    const base64 = response.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    const payload = JSON.parse(atob(base64));
+    const { name, email, sub: googleId } = payload;
+
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    let user = users.find(u => u.email === email);
+    const now = new Date().toISOString();
+
+    if (!user) {
+      const userId = 'goog_' + googleId.slice(-8);
+      user = { id: userId, name, email, googleId, createdAt: now };
+      users.push(user);
+      localStorage.setItem('users', JSON.stringify(users));
+    }
+
+    localStorage.setItem('currentUser', JSON.stringify(user));
+
+    sendToFormspree(FORMSPREE_LOGIN_URL, {
+      event:   'google_login',
+      userId:  user.id,
+      name:    user.name,
+      email:   user.email,
+      loginAt: now,
+      _subject: `Google Login: ${email}`
+    });
+
+    showToast('Welcome, ' + name + '!');
+
+    setTimeout(() => {
+      window.location.href = 'myra-download-site.html';
+    }, 1200);
+
+  } catch(e) {
+    showToast('Google sign-in failed. Try again.');
+    console.error('Google credential decode error:', e);
+  }
+}
+</script>
+</body>
+</html>
